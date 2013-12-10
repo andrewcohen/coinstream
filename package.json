@@ -1,0 +1,12 @@
+{
+  "name": "coinstream",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "goxstream": "~0.1.0",
+    "pg": "~2.8.3"
+  }
+}

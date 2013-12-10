@@ -6,7 +6,7 @@
     "start": "node app.js"
   },
   "dependencies": {
-    "goxstream": "~0.1.0",
+    "goxstream": "git://github.com/andrewcohen/goxstream",
     "pg": "~2.8.3"
   }
 }

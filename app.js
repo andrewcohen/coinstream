@@ -3,7 +3,7 @@ var gox = require('goxstream');
 var options = {
   currency: 'USD',
   ticker: true,
-  depth: true,
+  //depth: true,
   //trade: true,
   //lag: true
 };
@@ -20,10 +20,9 @@ stream.on('data', function(data) {
   if(data.length <= 1) return;
   try {
     data = JSON.parse(data);
-    //console.log(data.channel_name);
     if(data.channel_name == "ticker.BTCUSD") {
       //console.log(data);
-      //console.log(new Date(), "data received")
+      console.log(new Date(), "data received")
       saveToDb(data);
       tickerCt++;
     }
@@ -48,15 +47,22 @@ client.connect(function(err) {
   if (err) {
     return console.error('could not connect to postgres', err);
   }
-
 });
 
 function saveToDb(data) {
-  var queryString = 'insert into ticker_prices ("buy", "sell") ';
+  var queryString = 'insert into ticker_prices ';
+  queryString += ' ("date", buy", "sell", "high", "low", "last_local", "last_orig", "vwap", "avg") ';
   queryString += 'values ('
+  queryString += new Date().toUTCString() + ',';
   queryString += data.ticker.buy.value_int + ',';
-  queryString += data.ticker.sell.value_int + ');';
-  //console.log(queryString);
+  queryString += data.ticker.sell.value_int + ',';
+  queryString += data.ticker.low.value_int + ',';
+  queryString += data.ticker.last_local.value_int + ',';
+  queryString += data.ticker.last_orig.value_int + ',';
+  queryString += data.ticker.vwap.value_int + ',';
+  queryString += data.ticker.avg.value_int + ',';
+  queryString += ');';
+  console.log(queryString);
 
   client.query(queryString, function(err, result) {
     if (err) {

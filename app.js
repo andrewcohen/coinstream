@@ -53,14 +53,14 @@ function saveToDb(data) {
   var queryString = 'insert into ticker_prices ';
   queryString += ' ("date", buy", "sell", "high", "low", "last_local", "last_orig", "vwap", "avg") ';
   queryString += 'values ('
-  queryString += new Date().toUTCString() + ',';
+  queryString += 'NOW(),';
   queryString += data.ticker.buy.value_int + ',';
   queryString += data.ticker.sell.value_int + ',';
   queryString += data.ticker.low.value_int + ',';
   queryString += data.ticker.last_local.value_int + ',';
   queryString += data.ticker.last_orig.value_int + ',';
   queryString += data.ticker.vwap.value_int + ',';
-  queryString += data.ticker.avg.value_int + ',';
+  queryString += data.ticker.avg.value_int + '';
   queryString += ');';
   console.log(queryString);
 

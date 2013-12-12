@@ -1,5 +1,3 @@
-# IT DOESN'T CRASH!
-
 Prerequisites
 - node
 - postgresql
@@ -7,9 +5,9 @@ Prerequisites
 Getting Started
 
 `npm install`
-`npm start`
+`coffee app.coffee`
 
 TODO
 
-* finish the postgres query to write (including timestamp)
+* convert remaining js to coffee
 * think about a new table for depth stream

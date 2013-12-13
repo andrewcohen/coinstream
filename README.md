@@ -1,11 +1,12 @@
 Prerequisites
 - node
 - postgresql
+- redis
 
 Getting Started
 
 `npm install`
-`coffee app.coffee`
+`coffee app.coffee` or `npm start`
 
 TODO
 

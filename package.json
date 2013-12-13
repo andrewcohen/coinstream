@@ -3,12 +3,12 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "start": "node app.js"
+    "start": "coffee app.coffee"
   },
   "dependencies": {
-    "goxstream": "git://github.com/andrewcohen/goxstream",
     "pg": "~2.8.3",
     "pubnub": "~3.5.48",
-    "coffee-script": "~1.6.3"
+    "coffee-script": "~1.6.3",
+    "kue": "~0.6.2"
   }
 }

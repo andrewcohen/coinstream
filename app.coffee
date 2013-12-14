@@ -7,9 +7,9 @@ jobs    = kue.createQueue()
 
 if cluster.isMaster
 
-  for cpu in require('os').cpus()
-    cluster.fork()
-    console.log "[#{new Date()}] spawning worker"
+  #for cpu in require('os').cpus()
+  cluster.fork()
+  console.log "[#{new Date()}] spawning worker"
 
   cluster.on 'exit', (worker) ->
     console.log "Worker [#{worker.id}] died"
@@ -34,9 +34,23 @@ if cluster.isMaster
       jobs.create('ticker', payload: message).save()
   )
 else
+  conn_string = "postgres://localhost/coinflux_development"
+
   jobs.process 'ticker', (job, done) =>
     console.log "[#{new Date()}] Worker [#{cluster.worker.id}] | Processed Job Id: #{job.id}"
-    saveToDb(job.data.payload)
+    queryString = insertString(job.data.payload)
+    pg.connect(conn_string, (err, client, done) ->
+      if err
+        console.error('error fetching client from pool: ', err)
+
+      client.query(queryString, (err, result) ->
+        done()
+
+        if err
+          console.error('error running query', err)
+      )
+    )
+
     # push to rails via ws
     done()
 
@@ -49,17 +63,8 @@ else
     #console.log "depth: ", depth_counter++
 #)
 
-
-conn_string = "postgres://localhost/coinflux_development"
-
-client = new pg.Client(conn_string)
-client.connect (err) ->
-  if err
-    console.error('could not connect to postgres.  reason:', err)
-
 `
-
-function saveToDb(data) {
+function insertString(data) {
   var queryString = 'insert into ticker_prices ';
   queryString += ' ("created_at", "updated_at", "buy", "sell", "high", "low", "last_local", "last_orig", "vwap", "avg") ';
   queryString += 'values ('
@@ -75,11 +80,6 @@ function saveToDb(data) {
   queryString += ');';
   //console.log(queryString);
 
-  client.query(queryString, function(err, result) {
-    if (err) {
-      return console.error('query err', err);
-    }
-    client.end()
-  });
+  return queryString;
 }
 `

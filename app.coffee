@@ -61,9 +61,9 @@ client.connect (err) ->
 
 function saveToDb(data) {
   var queryString = 'insert into ticker_prices ';
-  queryString += ' ("date", "buy", "sell", "high", "low", "last_local", "last_orig", "vwap", "avg") ';
+  queryString += ' ("created_at", "updated_at", "buy", "sell", "high", "low", "last_local", "last_orig", "vwap", "avg") ';
   queryString += 'values ('
-  queryString += 'NOW()' + ',';
+  queryString += 'NOW(), NOW(),';
   queryString += data.ticker.buy.value_int + ',';
   queryString += data.ticker.sell.value_int + ',';
   queryString += data.ticker.high.value_int + ',';

@@ -61,10 +61,10 @@ class App
         client.publish('/ticker', {
           buy: ticker.buy.display_short,
           sell: ticker.sell.display_short,
-          ticker: JSON.stringify ticker
+          vol: ticker.vol.display_short
         })
 
-        log.info "Worker [#{cluster.worker.id}] | [#{job.id}] completed"
+        log.info "Worker [#{cluster.worker.id}] | completed [job #{job.id}]"
         done()
 
 

@@ -1,4 +1,5 @@
-pg = require('pg')
+pg  = require('pg')
+log = require('./log')
 
 class PgConnection
   @query: ->
@@ -6,7 +7,7 @@ class PgConnection
     conn_string = "postgres://localhost/coinflux_development"
     pg.connect(conn_string, (err, client) ->
       if err
-        console.error('error fetching client from pool: ', err)
+        log.error('postgres fetching client from pool: ', err)
       else
         client.query.apply(client, args)
     )
@@ -14,7 +15,7 @@ class PgConnection
   @performQuery: (queryString) =>
     @query(queryString, (err, result) =>
       if err
-        console.error('error running query', err)
+        log.error('error running query', err)
     )
 
   @writeTicker: (data) ->

@@ -1,55 +1,48 @@
-cluster      = require('cluster')
-pubnub       = require('pubnub')
-kue          = require('kue')
-jobs         = kue.createQueue()
+log          = require('./lib/log')
 pgConnection = require('./lib/pg_connection')
+PubNubFeed   = require('./lib/pubnub_feed')
+cluster      = require('cluster')
+kue          = require('kue')
 
 class App
   constructor: (options = {}) ->
-    if cluster.isMaster
+    #if options["debug"]
+      #log.info "[#{new Date()}] initializing kue web ui"
+      #kue.app.listen(3001)
 
-      for cpu in require('os').cpus()
+    # set up kue
+    @jobs = kue.createQueue()
+
+    if cluster.isMaster
+      _workerCount = options["workers"] || require('os').cpus().length
+      for cpu in [1.._workerCount]
         cluster.fork()
-        console.log "[#{new Date()}] spawning worker"
+        log.info "Spawning worker"
 
       cluster.on 'exit', (worker) ->
-        console.log "Worker [#{worker.id}] died"
+        log.info "Worker [#{worker.id}] died"
         cluster.fork()
 
-      console.log "[#{new Date()}] initializing pubnub"
-      pubnub = pubnub.init(
-        publish_key: 'nope'
-        subscribe_key: 'sub-c-50d56e1e-2fd9-11e3-a041-02ee2ddab7fe'
-      )
+      # set up pubnub
+      @pubnub = new PubNubFeed()
 
-      console.log "[#{new Date()}] initializing kue web ui"
-      kue.app.listen(3001)
+      tickerJob = (message) =>
+        @jobs.create('ticker', payload: message).save()
 
-      #https://mtgox.com/api/2/stream/list_public?pretty
-      # btc -> usd ticker
-      ticker_counter = 0
-      pubnub.subscribe(
-        channel  : "d5f06780-30a8-4a48-a2f8-7ed181b4a13f",
-        callback : (message) =>
-          console.log "[#{new Date()}] Ticker [#{ticker_counter++}]"
-          jobs.create('ticker', payload: message).save()
-      )
+      @pubnub.ticker(tickerJob)
+
     else
-
-      jobs.process 'ticker', (job, done) =>
-        console.log "[#{new Date()}] Worker [#{cluster.worker.id}] | Processed Job Id: #{job.id}"
+      @jobs.process 'ticker', (job, done) =>
         pgConnection.writeTicker(job.data.payload)
-
-        # push to rails via ws
+        #push to rails via ws
+        #
+        log.info "Worker [#{cluster.worker.id}] | [#{job.id}] completed"
         done()
 
-#btc -> usd depth
-#depth_counter = 0
-#pubnub.subscribe(
-  #channel  : "24e67e0d-1cad-4cc0-9e7a-f8523ef460fe",
-  #callback : (message) ->
-    ##console.log( " > ", message )
-    #console.log "depth: ", depth_counter++
-#)
-#
-new App()
+
+new App(
+  debug: true
+
+  # defaults to # of cores
+  #workers: 1
+)

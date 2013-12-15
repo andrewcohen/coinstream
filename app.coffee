@@ -7,10 +7,6 @@ kue          = require('kue')
 
 class App
   constructor: (options = {}) ->
-    #if options["debug"]
-      #log.info "[#{new Date()}] initializing kue web ui"
-      #kue.app.listen(3001)
-
     @jobs = kue.createQueue()
 
     if cluster.isMaster
@@ -23,34 +19,51 @@ class App
         log.info "Worker [#{worker.id}] died"
         cluster.fork()
 
+      if options["debug"]
+        log.info "[#{new Date()}] initializing kue web ui"
+        kue.app.listen(3001)
+
       faye   = new FayeClient()
       pubnub = new PubNubFeed()
 
-      tickerJob = (message) =>
-        @jobs.create('ticker', payload: message).save()
+      if options["ticker"]
+        tickerJob = (message) =>
+          @jobs.create('ticker', payload: message).save()
+        pubnub.ticker(tickerJob)
 
-      # subscribe to ticker channel with callback tickerJob
-      pubnub.ticker(tickerJob)
 
+      if options["depth"]
+        depthJob = (message) =>
+          @jobs.create('depth', payload: message).save()
+        pubnub.depth(depthJob)
     else
       # this is gonna need promises
       # callback heLL
-      @jobs.process 'ticker', (job, done) =>
-        ticker = job.data.payload.ticker
-        db.writeTicker ticker, ->
-          FayeClient.publish('/ticker', {
-            buy: ticker.buy.display_short,
-            sell: ticker.sell.display_short,
-            vol: ticker.vol.display_short
-          }, ->
-            log.info "Worker [#{cluster.worker.id}] | completed [job #{job.id}] \n"
+      if options["ticker"]
+        @jobs.process 'ticker', (job, done) =>
+          ticker = job.data.payload.ticker
+          db.writeTicker ticker, ->
+            FayeClient.publish('/ticker', {
+              buy: ticker.buy.display_short,
+              sell: ticker.sell.display_short,
+              vol: ticker.vol.display_short
+            }, ->
+              log.info "Worker [#{cluster.worker.id}] | completed ticker [job #{job.id}] \n"
+              done()
+            )
+
+      if options["depth"]
+        @jobs.process 'depth', (job, done) =>
+          db.writeDepth job.data.payload.depth , ->
+            log.info "Worker [#{cluster.worker.id}] | completed depth [job #{job.id}] \n"
             done()
-          )
 
 
 
 new App(
   debug: true
+  ticker: true
+  depth: true
 
   # defaults to # of cores
   #workers: 1

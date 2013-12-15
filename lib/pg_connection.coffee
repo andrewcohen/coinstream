@@ -5,17 +5,19 @@ class PgConnection
   @query: ->
     args = arguments
     conn_string = "postgres://localhost/coinflux_development"
-    pg.connect(conn_string, (err, client) ->
+    pg.connect(conn_string, (err, client, done) ->
       if err
         log.error('| postgres | error fetching client from pool: ', err)
       else
         client.query.apply(client, args)
+        done()
     )
 
   @performQuery: (queryString, cb) =>
+    @qs = queryString
     @query(queryString, (err, result) =>
       if err
-        log.error('error running query', err)
+        log.info("|postgres| error running query: #{queryString} \n #{err}")
       else
         log.info '| postgres | successful write'
         cb()
@@ -32,6 +34,15 @@ class PgConnection
 
     @performQuery(queryString, cb)
 
+  @writeDepth: (data, cb) ->
+    queryString = """
+      insert into depth_tickers ("created_at", "updated_at", "type_num",
+      "type_str", "volume", "price", "item", "currency", "total_volume") values
+      (NOW(), NOW(), #{data.type}, '#{data.type_str}', #{data.volume_int},
+      #{data.price_int}, '#{data.item}', '#{data.currency}', #{data.total_volume_int});
+    """
+
+    @performQuery(queryString, cb)
 
 
 module.exports = PgConnection

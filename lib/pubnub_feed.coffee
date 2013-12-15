@@ -21,14 +21,11 @@ class PubNubFeed
         callback(message)
     )
 
-#btc -> usd depth
-#depth_counter = 0
-#pubnub.subscribe(
-  #channel  : "24e67e0d-1cad-4cc0-9e7a-f8523ef460fe",
-  #callback : (message) ->
-    ##console.log( " > ", message )
-    #console.log "depth: ", depth_counter++
-#)
-#
+  depth: (callback) ->
+    @pubnub.subscribe(
+      channel  : "24e67e0d-1cad-4cc0-9e7a-f8523ef460fe",
+      callback : (message) ->
+        callback(message)
+    )
 
 module.exports = PubNubFeed

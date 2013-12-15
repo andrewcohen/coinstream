@@ -29,21 +29,24 @@ class App
       tickerJob = (message) =>
         @jobs.create('ticker', payload: message).save()
 
+      # subscribe to ticker channel with callback tickerJob
       pubnub.ticker(tickerJob)
 
     else
+      # this is gonna need promises
+      # callback heLL
       @jobs.process 'ticker', (job, done) =>
         ticker = job.data.payload.ticker
-        db.writeTicker(ticker)
+        db.writeTicker ticker, ->
+          FayeClient.publish('/ticker', {
+            buy: ticker.buy.display_short,
+            sell: ticker.sell.display_short,
+            vol: ticker.vol.display_short
+          }, ->
+            log.info "Worker [#{cluster.worker.id}] | completed [job #{job.id}] \n"
+            done()
+          )
 
-        FayeClient.publish('/ticker', {
-          buy: ticker.buy.display_short,
-          sell: ticker.sell.display_short,
-          vol: ticker.vol.display_short
-        })
-
-        log.info "Worker [#{cluster.worker.id}] | completed [job #{job.id}]"
-        done()
 
 
 new App(

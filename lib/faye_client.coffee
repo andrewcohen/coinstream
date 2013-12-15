@@ -19,8 +19,9 @@ class FayeClient
 
     server.listen(8000)
 
-  @publish: (channel, payload) ->
+  @publish: (channel, payload, cb) ->
     client.publish(channel, payload)
+    cb()
 
 
 

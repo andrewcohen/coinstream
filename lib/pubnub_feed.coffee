@@ -5,7 +5,6 @@ log    = require('./log')
 class PubNubFeed
   constructor: (options = {}) ->
     @options = options
-    @ticker_counter = 0
     @initializePubNub()
 
   initializePubNub: ->
@@ -19,7 +18,6 @@ class PubNubFeed
     @pubnub.subscribe(
       channel  : "d5f06780-30a8-4a48-a2f8-7ed181b4a13f",
       callback : (message) =>
-        log.info "Ticker [#{@ticker_counter++}]"
         callback(message)
     )
 

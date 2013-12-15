@@ -1,5 +1,5 @@
 log          = require('./lib/log')
-pgConnection = require('./lib/pg_connection')
+db           = require('./lib/pg_connection')
 PubNubFeed   = require('./lib/pubnub_feed')
 cluster      = require('cluster')
 kue          = require('kue')
@@ -8,14 +8,20 @@ kue          = require('kue')
 http = require('http')
 faye = require('faye')
 
-server = http.createServer()
+
+server = http.createServer (req, res) ->
+  res.writeHead(200, {'Content-Type': 'text/plain'})
+  res.write('Hi, non bayeux req')
+  res.end()
+
 bayeux = new faye.NodeAdapter(mount: '/faye', timeout: 45)
 bayeux.attach(server)
 
-bayeux.on 'handshake', (a) -> console.log "#{a} connected"
-bayeux.on 'subscribe', (a, b) -> console.log "#{a} subscribed to #{b}"
-bayeux.on 'publish', (a, b, c) -> console.log "#{a} published #{c.text} to #{b}"
-bayeux.on 'disconnect', (a) -> console.log "#{a} disconnected"
+bayeux.on 'handshake', (a) -> log.info "#{a} connected"
+bayeux.on 'subscribe', (a, b) -> log.info "#{a} subscribed to #{b}"
+bayeux.on 'disconnect', (a) -> log.info "#{a} disconnected"
+
+client = new faye.Client('http://localhost:8000/faye')
 
 class App
   constructor: (options = {}) ->
@@ -49,10 +55,13 @@ class App
 
     else
       @jobs.process 'ticker', (job, done) =>
-        pgConnection.writeTicker(job.data.payload)
-        #push to rails via ws
-        bayeux.getClient().publish('/ticker', {
-          text: "hi from teh server"
+        ticker = job.data.payload.ticker
+        db.writeTicker(ticker)
+
+        client.publish('/ticker', {
+          buy: ticker.buy.display_short,
+          sell: ticker.sell.display_short,
+          ticker: JSON.stringify ticker
         })
 
         log.info "Worker [#{cluster.worker.id}] | [#{job.id}] completed"

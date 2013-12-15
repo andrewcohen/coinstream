@@ -7,7 +7,7 @@ class PgConnection
     conn_string = "postgres://localhost/coinflux_development"
     pg.connect(conn_string, (err, client) ->
       if err
-        log.error('postgres fetching client from pool: ', err)
+        log.error('|postgres| error fetching client from pool: ', err)
       else
         client.query.apply(client, args)
     )
@@ -19,7 +19,6 @@ class PgConnection
     )
 
   @writeTicker: (data) ->
-    data = data.ticker
     queryString = """
       insert into ticker_prices ("created_at", "updated_at", "buy",
       "sell", "high", "low", "last_local", "last_orig", "vwap", "avg") values

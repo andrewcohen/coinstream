@@ -19,8 +19,7 @@ class PubNubFeed
     @pubnub.subscribe(
       channel  : "d5f06780-30a8-4a48-a2f8-7ed181b4a13f",
       callback : (message) =>
-        console.log "[#{new Date()}] Ticker [#{@ticker_counter++}]"
-        #jobs.create('ticker', payload: message).save()
+        log.info "Ticker [#{@ticker_counter++}]"
         callback(message)
     )
 

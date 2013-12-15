@@ -1,27 +1,9 @@
 log          = require('./lib/log')
 db           = require('./lib/pg_connection')
 PubNubFeed   = require('./lib/pubnub_feed')
+FayeClient   = require('./lib/faye_client')
 cluster      = require('cluster')
 kue          = require('kue')
-
-# outbound ws
-http = require('http')
-faye = require('faye')
-
-
-server = http.createServer (req, res) ->
-  res.writeHead(200, {'Content-Type': 'text/plain'})
-  res.write('Hi, non bayeux req')
-  res.end()
-
-bayeux = new faye.NodeAdapter(mount: '/faye', timeout: 45)
-bayeux.attach(server)
-
-bayeux.on 'handshake', (a) -> log.info "#{a} connected"
-bayeux.on 'subscribe', (a, b) -> log.info "#{a} subscribed to #{b}"
-bayeux.on 'disconnect', (a) -> log.info "#{a} disconnected"
-
-client = new faye.Client('http://localhost:8000/faye')
 
 class App
   constructor: (options = {}) ->
@@ -29,7 +11,6 @@ class App
       #log.info "[#{new Date()}] initializing kue web ui"
       #kue.app.listen(3001)
 
-    # set up kue
     @jobs = kue.createQueue()
 
     if cluster.isMaster
@@ -42,23 +23,20 @@ class App
         log.info "Worker [#{worker.id}] died"
         cluster.fork()
 
-      # set up faye
-      server.listen(8000)
-
-      # set up pubnub
-      @pubnub = new PubNubFeed()
+      faye   = new FayeClient()
+      pubnub = new PubNubFeed()
 
       tickerJob = (message) =>
         @jobs.create('ticker', payload: message).save()
 
-      @pubnub.ticker(tickerJob)
+      pubnub.ticker(tickerJob)
 
     else
       @jobs.process 'ticker', (job, done) =>
         ticker = job.data.payload.ticker
         db.writeTicker(ticker)
 
-        client.publish('/ticker', {
+        FayeClient.publish('/ticker', {
           buy: ticker.buy.display_short,
           sell: ticker.sell.display_short,
           vol: ticker.vol.display_short

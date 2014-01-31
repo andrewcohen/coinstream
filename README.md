@@ -10,5 +10,4 @@ Getting Started
 
 TODO
 
-* convert remaining js to coffee
 * think about a new table for depth stream
